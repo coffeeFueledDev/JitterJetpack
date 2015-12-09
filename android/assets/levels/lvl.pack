@@ -1,0 +1,33 @@
+
+lvl.png
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+levels1
+  rotate: false
+  xy: 1, 1
+  size: 15, 15
+  orig: 15, 15
+  offset: 0, 0
+  index: -1
+levels2
+  rotate: false
+  xy: 18, 1
+  size: 15, 15
+  orig: 15, 15
+  offset: 0, 0
+  index: -1
+levels3
+  rotate: false
+  xy: 35, 1
+  size: 15, 15
+  orig: 15, 15
+  offset: 0, 0
+  index: -1
+levels4
+  rotate: false
+  xy: 52, 1
+  size: 15, 15
+  orig: 15, 15
+  offset: 0, 0
+  index: -1
