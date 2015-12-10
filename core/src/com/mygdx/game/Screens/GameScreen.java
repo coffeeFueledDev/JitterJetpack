@@ -198,7 +198,6 @@ public class GameScreen implements Screen{
         }
 
 
-
     }
 
     public void updateRunning(float delta){

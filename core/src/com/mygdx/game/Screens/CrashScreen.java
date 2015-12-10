@@ -11,6 +11,7 @@ public class CrashScreen implements Screen {
 
     public CrashScreen(MyGdxGame game){
         this.game = game;
+
     }
 
 
