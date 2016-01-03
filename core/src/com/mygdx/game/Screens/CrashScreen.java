@@ -5,7 +5,10 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.mygdx.game.MyGdxGame;
 
-
+/**
+ * - Not in use.
+ *
+ * */
 public class CrashScreen implements Screen {
     MyGdxGame game;
 
@@ -59,4 +62,20 @@ public class CrashScreen implements Screen {
     public void dispose() {
 
     }
+
+    // Probably won't use
+    /*
+    public void endLife(){
+        float delay = 3;
+        spriteMovement.crashed();
+        Gdx.input.setInputProcessor(null);
+        Timer.schedule(new Timer.Task() {
+            @Override
+            public void run() {
+                game.setScreen(crashScreen);
+                hide();
+            }
+        }, delay, 0, 1);
+    }*/
+
 }

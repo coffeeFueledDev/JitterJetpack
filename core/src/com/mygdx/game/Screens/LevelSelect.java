@@ -16,8 +16,12 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.mygdx.game.GenericControls.InputController;
+import com.mygdx.game.LevelVars;
+import com.mygdx.game.Levels.LevelFive;
+import com.mygdx.game.Levels.LevelFour;
 import com.mygdx.game.Levels.LevelOne;
 import com.mygdx.game.Levels.LevelSix;
+import com.mygdx.game.Levels.LevelThree;
 import com.mygdx.game.Levels.LevelTwo;
 import com.mygdx.game.MyGdxGame;
 
@@ -46,7 +50,7 @@ public class LevelSelect implements Screen, ApplicationListener {
     Label lvFive;
     Label lvSix;
 
-    public static final int LEVEL_ONE = 0, LEVEL_TWO = 1;
+    //public static final int LEVEL_ONE = 0, LEVEL_TWO = 1;
 
     public LevelSelect(MyGdxGame game){
         this.game = game;
@@ -66,7 +70,7 @@ public class LevelSelect implements Screen, ApplicationListener {
         lvThree = new Label("Level Three", new Label.LabelStyle(new BitmapFont(), Color.WHITE));
         lvFour = new Label("Level Four", new Label.LabelStyle(new BitmapFont(), Color.WHITE));
         lvFive = new Label("Level Five", new Label.LabelStyle(new BitmapFont(), Color.WHITE));
-        lvSix = new Label("Test Level", new Label.LabelStyle(new BitmapFont(), Color.WHITE));
+        lvSix = new Label("Level Six", new Label.LabelStyle(new BitmapFont(), Color.WHITE));
 
         levelLabel.setFontScale(MENU_SCALE);
         lvOne.setFontScale(MENU_SCALE * 2);
@@ -80,7 +84,7 @@ public class LevelSelect implements Screen, ApplicationListener {
             @Override
             public boolean handle(Event event) {
                 gameScreen = new LevelOne(game);
-                game.levelSel = LEVEL_ONE;
+                game.levelSel = LevelVars.LEVEL_ONE;
                 game.setScreen(gameScreen);
                 return true;
             }
@@ -91,7 +95,37 @@ public class LevelSelect implements Screen, ApplicationListener {
             @Override
             public boolean handle(Event event) {
                 gameScreen = new LevelTwo(game);
-                game.levelSel = LEVEL_TWO;
+                game.levelSel = LevelVars.LEVEL_TWO;
+                game.setScreen(gameScreen);
+                return true;
+            }
+        });
+
+        lvThree.addListener(new EventListener() {
+            @Override
+            public boolean handle(Event event) {
+                gameScreen = new LevelThree(game);
+                game.levelSel = LevelVars.LEVEL_THREE;
+                game.setScreen(gameScreen);
+                return true;
+            }
+        });
+
+        lvFour.addListener(new EventListener() {
+            @Override
+            public boolean handle(Event event) {
+                gameScreen = new LevelFour(game);
+                game.levelSel = LevelVars.LEVEL_FOUR;
+                game.setScreen(gameScreen);
+                return true;
+            }
+        });
+
+        lvFive.addListener(new EventListener() {
+            @Override
+            public boolean handle(Event event) {
+                gameScreen = new LevelFive(game);
+                game.levelSel = LevelVars.LEVEL_FIVE;
                 game.setScreen(gameScreen);
                 return true;
             }
@@ -101,7 +135,7 @@ public class LevelSelect implements Screen, ApplicationListener {
             @Override
             public boolean handle(Event event) {
                 gameScreen = new LevelSix(game);
-                game.levelSel = LEVEL_ONE; // dummy code
+                game.levelSel = LevelVars.LEVEL_SIX;
                 game.setScreen(gameScreen);
                 return true;
             }

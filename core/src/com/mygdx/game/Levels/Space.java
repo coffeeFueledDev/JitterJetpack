@@ -1,9 +1,14 @@
 package com.mygdx.game.Levels;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.World;
 import com.mygdx.game.Sprites.Asteroid;
+import com.mygdx.game.WorldVars;
 
 import java.util.Random;
 
@@ -17,9 +22,12 @@ public class Space {
     Vector2 ranMovement;
     float ASTEROID_HORIZONTAL_SPEED = 10000;
     float ASTEROID_RADIUS = 1.0f;
+    Texture texture;
+    Sprite asteroidSprite;
 
     public Space(World world){
         this.world = world;
+        initSprites();
     }
 
     /**
@@ -54,6 +62,7 @@ public class Space {
                 randomisePosition(camera);
                 asteroid[asteroidCounter] = new Asteroid(world, new Vector2(randSide, randY), ASTEROID_RADIUS);
                 asteroid[asteroidCounter].moveAsteroid(ranMovement);
+                asteroid[asteroidCounter].asteroid = setSprite(asteroid[asteroidCounter].asteroid); /** sets asteroid sprite data */
                 asteroidCounter++;
                 if(asteroidCounter > 2){
                     asteroidCounter = 0;
@@ -61,6 +70,18 @@ public class Space {
                 time = 0;
             }
         }
+
+    public void initSprites(){
+        texture = new Texture(Gdx.files.internal(WorldVars.ASTEROID_SPRITE));
+        asteroidSprite = new Sprite(texture);
+        asteroidSprite.setSize(2, 2);
+        asteroidSprite.setOrigin(asteroidSprite.getWidth()/2,asteroidSprite.getHeight()/2);
+    }
+
+    public Body setSprite(Body body){
+        body.setUserData(asteroidSprite);
+        return body;
+    }
 
 }
 

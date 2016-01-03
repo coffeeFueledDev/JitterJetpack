@@ -7,6 +7,7 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.ChainShape;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.World;
+import com.mygdx.game.B2DVars;
 
 public class Container {
     private World world;
@@ -18,15 +19,15 @@ public class Container {
     }
 
     public void createContainer(float mapSize){
-        container(0); /** Ground */
-        container(mapSize); /** Roof */
+        container(0, B2DVars.SAFE_DATA); /** Ground */
+        container(mapSize, B2DVars.WIN_DATA); /** Roof */
     }
 
     public Vector2 getRoofDimensions(){
         return bodyDef.position;
     }
 
-    public void container(float height){
+    public void container(float height, String USER_DATA){
         bodyDef = new BodyDef();
         FixtureDef fixtureDef = new FixtureDef();
         /** WALL
@@ -43,7 +44,7 @@ public class Container {
         fixtureDef.friction = .5f;
         fixtureDef.restitution = 0;
 
-        world.createBody(bodyDef).createFixture(fixtureDef);
+        world.createBody(bodyDef).createFixture(fixtureDef).setUserData(USER_DATA);
         shape.dispose();
     }
 

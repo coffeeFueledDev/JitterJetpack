@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.mygdx.game.GenericControls.InputController;
+import com.mygdx.game.LevelVars;
 import com.mygdx.game.Levels.LevelOne;
 import com.mygdx.game.MyGdxGame;
 
@@ -23,6 +24,7 @@ public class Menu implements Screen {
     LevelSelect levelSelect;
     Workshop workshopScreen;
     Purse purseScreen;
+    AccountScreen accountScreen;
     public int MENU_SCALE = 4;
 
     private Stage stage;
@@ -32,6 +34,7 @@ public class Menu implements Screen {
     Label continueLabel;
     Label purseLabel;
     Label levelSelectLabel;
+    Label accountLabel;
 
 
     public Menu(MyGdxGame game){
@@ -44,6 +47,7 @@ public class Menu implements Screen {
         levelSelect = new LevelSelect(game);
         workshopScreen = new Workshop(game);
         purseScreen = new Purse(game);
+        accountScreen = new AccountScreen(game);
         stage = new Stage();
         Table table = new Table();
         table.top();
@@ -54,12 +58,14 @@ public class Menu implements Screen {
         workshopLabel = new Label("Workshop", new Label.LabelStyle(new BitmapFont(), Color.WHITE));
         continueLabel = new Label("Continue", new Label.LabelStyle(new BitmapFont(), Color.WHITE));
         purseLabel = new Label("Purse", new Label.LabelStyle(new BitmapFont(), Color.WHITE));
+        accountLabel = new Label("Account", new Label.LabelStyle(new BitmapFont(), Color.WHITE));
 
         startGameLabel.setFontScale(MENU_SCALE);
         levelSelectLabel.setFontScale(MENU_SCALE);
         workshopLabel.setFontScale(MENU_SCALE);
         continueLabel.setFontScale(MENU_SCALE);
         purseLabel.setFontScale(MENU_SCALE);
+        accountLabel.setFontScale(MENU_SCALE);
 
         startGameLabel.addListener(new EventListener() {
             @Override
@@ -72,7 +78,7 @@ public class Menu implements Screen {
         levelSelectLabel.addListener(new EventListener() {
             @Override
             public boolean handle(Event event) {
-                game.levelSel = levelSelect.LEVEL_ONE;
+                game.levelSel = LevelVars.LEVEL_ONE;
                 game.setScreen(levelSelect);
                 return true;
             }
@@ -94,6 +100,14 @@ public class Menu implements Screen {
             }
         });
 
+        accountLabel.addListener(new EventListener() {
+            @Override
+            public boolean handle(Event event) {
+                game.setScreen(accountScreen);
+                return false;
+            }
+        });
+
         table.center();
         table.add(startGameLabel).expandX().padTop(10);
         table.row();
@@ -104,6 +118,8 @@ public class Menu implements Screen {
         table.add(continueLabel).expandX().padTop(10);
         table.row();
         table.add(purseLabel).expandX().padTop(10);
+        table.row();
+        table.add(accountLabel).expandX().padTop(10);
 
 
         stage.addActor(table);

@@ -74,6 +74,7 @@ public class SplashScreen implements Screen {
         splash = new Sprite(backgroundTexture);
         splash.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
+
         tweenManager = new TweenManager();
         Tween.registerAccessor(Sprite.class, new SpriteAccessor());
 
@@ -128,7 +129,6 @@ public class SplashScreen implements Screen {
 
     public void showBackground(){
         splash.draw(batch);
-
     }
 
     @Override

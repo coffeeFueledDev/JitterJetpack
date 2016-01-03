@@ -11,7 +11,7 @@ import com.badlogic.gdx.physics.box2d.joints.RopeJointDef;
 /**
  * NOT IN USE; MAY NEVER USE.
  *
- * This class is for sensing when and object below the sprite
+ * This class is for sensing when an object below the sprite
  * is at a certain distance from the sprite
  *
  * - Collision Filtering

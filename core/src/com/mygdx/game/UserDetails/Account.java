@@ -3,10 +3,13 @@ package com.mygdx.game.UserDetails;
 public class Account {
     String name;
     int stardust;
+    private int fuelNumber;
 
     public Account(){
 
     }
+
+
 
     public void setName(String name){
         this.name = name;

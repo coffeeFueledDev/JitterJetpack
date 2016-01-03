@@ -5,11 +5,14 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.mygdx.game.Sprites.Player;
 import com.mygdx.game.UserDetails.Account;
 
 
@@ -28,6 +31,7 @@ public class Hud {
 
     public Counters counter;
     Account account;
+    static Vector2 FONT_SCALE = new Vector2(4,4);
 
     public Hud(SpriteBatch sb){
         counter = new Counters();
@@ -43,15 +47,16 @@ public class Hud {
         scoreLabel = new Label(String.format("%06d", score), new Label.LabelStyle(new BitmapFont(), Color.WHITE));
         timeLabel = new Label("TIME", new Label.LabelStyle(new BitmapFont(), Color.RED));
         levelLabel = new Label("1-1", new Label.LabelStyle(new BitmapFont(), Color.WHITE));
-        worldLabel = new Label("WORLD", new Label.LabelStyle(new BitmapFont(), Color.RED));
+        worldLabel = new Label("HEIGHT", new Label.LabelStyle(new BitmapFont(), Color.RED));
         playerLabel = new Label("NAME", new Label.LabelStyle(new BitmapFont(), Color.RED));
 
-        countLabel.setFontScale(2,2);
-        scoreLabel.setFontScale(2,2);
-        timeLabel.setFontScale(2,2);
-        levelLabel.setFontScale(2,2);
-        worldLabel.setFontScale(2,2);
-        playerLabel.setFontScale(2, 2);
+        countLabel.setFontScale(FONT_SCALE.x, FONT_SCALE.y);
+        scoreLabel.setFontScale(FONT_SCALE.x, FONT_SCALE.y);
+        timeLabel.setFontScale(FONT_SCALE.x/2, FONT_SCALE.y/2);
+        levelLabel.setFontScale(FONT_SCALE.x, FONT_SCALE.y);
+        worldLabel.setFontScale(FONT_SCALE.x/2, FONT_SCALE.y/2);
+        playerLabel.setFontScale(FONT_SCALE.x/2, FONT_SCALE.y/2);
+
 
         table.add(playerLabel).expandX().padTop(10);
         table.add(worldLabel).expandX().padTop(10);
@@ -64,14 +69,20 @@ public class Hud {
         stage.addActor(table);
 
         account = new Account();
-        account.setName("Alex"); /** Dummy code */
+        account.setName("SHIELD"); /** Dummy code */
         playerLabel.setText(account.getName());
 
     }
 
-    public void update(float dt){
-        counter.update(dt);
+    public void update(float dt, Body player, Player playerDetails){
+        counter.update(dt, player);
         countLabel.setText("" + counter.getTime());
+        if((counter.getHeight()%5) == 0)
+            levelLabel.setText(""+ counter.getHeight());
+        /** Just using score label as a placeholder for the shield counter..
+        scoreLabel.setText("" + counter.getShieldTime());*/
+
+        scoreLabel.setText("" + playerDetails.getCurrentHealth());
 
     }
 

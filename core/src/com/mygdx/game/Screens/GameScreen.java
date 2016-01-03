@@ -15,74 +15,102 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Timer;
 import com.mygdx.game.Boundaries.CollisionDetection;
 import com.mygdx.game.Boundaries.Container;
+import com.mygdx.game.GenericControls.InputController;
 import com.mygdx.game.HUD.Counters;
+import com.mygdx.game.HUD.CrashOverlay;
 import com.mygdx.game.HUD.Hud;
 import com.mygdx.game.HUD.MenuOverlay;
-import com.mygdx.game.GenericControls.InputController;
-import com.mygdx.game.Levels.LevelOne;
-import com.mygdx.game.Levels.LevelTwo;
+import com.mygdx.game.HUD.WinOverlay;
 import com.mygdx.game.Movement.Movement;
 import com.mygdx.game.MyGdxGame;
 import com.mygdx.game.Sprites.Player;
+import com.mygdx.game.Sprites.PlayerCrashVisual;
 import com.mygdx.game.WorldRenderer;
 
+import java.util.ArrayList;
+
 /** FIX/DO:
- *  - Add loading screen to map creation so back gdx color layer doesn't show for 2 frames
  *
- *  - Create multiple object layers in Tiled for different collision properties
+ * - Create Tutorial map
+ *  - Make shield visual
+ *  - Refactor shield for re-activation on acquire
  *
- *  - Fix circle objects; Tiled uses Ellipses, not Circles.
- *  - Moving tiles, or sprites..?
+ * - Change sprite colour when shield is applied
+ * - Add damage visual to sprite
  *
- * - If hit-box collides -> crash player
- *   - Box drawing multiple times after crashScreen switch
+ *  - LevelThree Tiled map lagged to shit when there are lots of corners of box2d (Honestly it's likely just a box2d set-back)
+ *      - Best scenario is to create Tiled maps that do not warrant as many corners
  *
- * - Tip: Use AssetManager for handling lots of textures
- * - Remember to dispose in all classes
- * - Ways to lose brainstorm:
- *      - Score = zero -> mission failed; Start whole map again.
- *          - Score decrements with time
- *          - Lose score when hit objects
- *      - Hit bad object -> respawn at checkpoint
+ *  - PowerUpOverlay not setting correctly in updateRunning
+ *  - Inside Counters.class shieldTimer is static because I am creating multiple Counters classes accidentally
+ *      - Inside LevelTwo.class I have grabbed the super.counters from GameScreen.class and this is what leads to the
+ *        objects not connecting
+ *          - It might be a good idea to refactor all of the PowerUpManager counting methods to the counter class!
+ *
+ *  - Greater than three sided objects seem to be rendered as triangles instead
+ *  - Create cool shield timer as an overlay (like Hud)
+ *
+ *                                           Refactor, Refactor, Refactor
+ * - I think levelSel is obsolete now
+ *
+ * - Shield timer does not reset once a new shield is collected (i.e if the shield is on 7 seconds and another is collected, it does not reset to 10 seconds)
+ *      - 70% sure a fix requires refactoring
+ *
+ *  - Add power-ups!
+ *      - Collectible or use-on-acquire?
+ *      - Shield (almost complete backend)
+ *      - Teleportation? (Probably tunnels of some sort)
+ *
+ *
+ * - Implement AssetManager for handling textures
+ *   - Add loading screen to map creation so gdx color layer doesn't show for 2 frames
+ *   - Remember to dispose in all classes
+ *
+ *   - Asteroids can finish the game on LevelThree, and most likely other levels - bug
  *
  * */
 
 public class GameScreen implements Screen{
     CrashScreen crashScreen;
-    Counters counters;
-    Player player;
+    protected Counters counters;
+    protected Player player;
     Container container;
     Movement spriteMovement;
     CollisionDetection collisionDetection;
+
     private Hud hud;
     private MenuOverlay menuOverlay;
+    private CrashOverlay crashOverlay;
+    protected WinOverlay winOverlay;
+    PlayerCrashVisual crashVisual;
 
     public float GRAVITY = -9.81f;
     private static final float TIMESTEP = 1 / 60f; /** 60 frames per second, so 1/60 */
     private static final int VELOCITYITERATIONS = 8, POSITIONITERATIONS = 3;
-    float ZOOM = 25;
+    public static float ZOOM = 25;
+    public static final int GAME_READY = 0, GAME_RUNNING = 1, GAME_PAUSED = 2, GAME_OVER = 3, GAME_WON = 4;
+    public static int SPRITE_POSITION_MIDDLE_OFFSET = 10;
 
-    private MyGdxGame game;
+    protected MyGdxGame game;
     public WorldRenderer renderer;
     public World world;
-    private Box2DDebugRenderer debugRenderer;
+    protected Box2DDebugRenderer debugRenderer;
     public OrthographicCamera camera;
-    private Body box;
+    protected Body box;
 
     SpriteBatch batch;
     private Array<Body> tmpBodies = new Array<Body>();
     SpriteBatch hudBatch;
-    SpriteBatch menuBatch;
+    protected SpriteBatch menuBatch;
 
     InputProcessor inputController;
     InputMultiplexer inputMultiplexer;
     boolean menuPressed = false;
 
-    public static final int GAME_READY = 0, GAME_RUNNING = 1, GAME_PAUSED = 2, GAME_OVER = 3;
     public int state;
+    public ArrayList<Body> spriteDeletionList;
 
 
     public GameScreen(MyGdxGame game) {
@@ -94,10 +122,9 @@ public class GameScreen implements Screen{
         camera = new OrthographicCamera();
         player = new Player(world);
         spriteMovement = new Movement(player);
-        collisionDetection = new CollisionDetection(world, player);
+        collisionDetection = new CollisionDetection(world, player, this);
+        spriteDeletionList = new ArrayList<Body>();
     }
-
-
 
     @Override
     public void show() {
@@ -107,17 +134,21 @@ public class GameScreen implements Screen{
         hud = new Hud(hudBatch);
         menuBatch = new SpriteBatch();
         menuOverlay = new MenuOverlay(menuBatch);
+        crashOverlay = new CrashOverlay(menuOverlay, batch);
+        crashOverlay.setUp();
+        winOverlay = new WinOverlay(batch);
+        winOverlay.setUp();
+        crashVisual = new PlayerCrashVisual();
 
         /** Dynamic Player object */
-        player.setHitBoxPosition(new Vector2(22, 15));
-        if(box == null)
-            box = player.createHitBox();
+        player.setHitBoxPosition(new Vector2(22, 30));
+        box = player.createHitBox();
+
         player.setStationarySprite();
         player.crashed(false);
+        player.win(false);
 
-        renderer.buildMapCollision(world, "oj");/**should probably build map somewhere else. Layer names likely to change with different levels and maps*/
         collisionDetection.collisionDetector();
-
 
         /** Multiplexer
          * - Allows control over multiple key inputs */
@@ -131,19 +162,20 @@ public class GameScreen implements Screen{
                 }
                 return true;
             }
-
         };
         inputMultiplexer = new InputMultiplexer();
         inputMultiplexer.addProcessor(menuOverlay.stage);
+        inputMultiplexer.addProcessor(crashOverlay.stage);
+        inputMultiplexer.addProcessor(winOverlay.stage);
         inputMultiplexer.addProcessor(inputController);
         inputMultiplexer.addProcessor(spriteMovement.spriteMovementListener());
         Gdx.input.setInputProcessor(inputMultiplexer);
 
         container = new Container(world);
 
-        /** Roof; Not sure why 1.455f, but works dynamically with any map height
+        /** Roof; Not sure why 1.455f, but works more-or-less dynamically with any map height
          *  - Roof is slightly off on some maps; Probably something to do with Tiled size vs box2d sizes
-         *      - Minor Bug; fix prior to release
+         *      - Minor Bug; fix prior to release. Has simple workarounds
          * sets floor also at x=0 */
         container.createContainer(renderer.getMapSize().y * 1.4555f);
 
@@ -158,10 +190,10 @@ public class GameScreen implements Screen{
         Gdx.gl.glClearColor(1, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        renderer.render(delta, camera); /** render map */
+        renderer.render(camera); /** render map */
         /** debugRenderer Renders box2d;
          * Must have this set until sprites are added or there will be invisible boxes */
-        debugRenderer.render(world, camera.combined);
+        //debugRenderer.render(world, camera.combined);
 
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
@@ -170,15 +202,16 @@ public class GameScreen implements Screen{
         for(Body box : tmpBodies){
             if(box.getUserData() instanceof Sprite){
                 Sprite sprite = (Sprite) box.getUserData();
-                sprite.setPosition(box.getPosition().x - sprite.getWidth()/2, box.getPosition().y - sprite.getHeight()/2);
+                sprite.setPosition(box.getPosition().x - sprite.getWidth() / 2, box.getPosition().y - sprite.getHeight() / 2);
                 sprite.setRotation(box.getAngle() * MathUtils.radiansToDegrees);
-                sprite.draw(batch);
+                if(box.getPosition().x != 0 && box.getPosition().y != 0) /** To test if fuel position passes over/probably don't need */
+                    sprite.draw(batch);
+
             }
         }
         batch.end();
 
         /** HUD */
-        hud.counter.setHeight((int) box.getPosition().y);
         hudBatch.setProjectionMatrix(hud.stage.getCamera().combined);
         hud.stage.draw();
 
@@ -193,7 +226,10 @@ public class GameScreen implements Screen{
                 updatePaused();
                 break;
             case GAME_OVER:
-                updateGameOver();
+                updateGameOver(delta);
+                break;
+            case GAME_WON:
+                updateGameWon();
                 break;
         }
 
@@ -208,14 +244,28 @@ public class GameScreen implements Screen{
 
         if(Gdx.input.justTouched())
             spriteMovement.boost();
+        spriteMovement.accelerometer();
+        spriteMovement.velocityLimitations(box);
 
         moveCameraWithSprite();
 
-        hud.update(delta);
+        hud.update(delta, box, player);
 
         if(menuPressed) {
             System.out.println("MENU_PRESSED");
             state = GAME_PAUSED;
+        }
+
+        if(player.crashed) {
+            player.deteriorateHealth(20);
+            if(player.getCurrentHealth() <= 0)
+                state = GAME_OVER;
+        }
+
+        if(player.hasWon()) {
+            state = GAME_WON;
+            Gdx.input.vibrate(50);
+            System.out.println("WON GAME");
         }
 
         container.wraparoundEffect(box, camera);
@@ -226,8 +276,26 @@ public class GameScreen implements Screen{
         state = GAME_RUNNING;
     }
 
+    protected boolean changeLevelWon = false;
+    public void updateGameWon() {
+        menuBatch.setProjectionMatrix(winOverlay.stage.getCamera().combined);
+        winOverlay.stage.draw();
 
+        switch(winOverlay.gameOverOption){
+            case 0:
+                changeLevelWon = true;
+                break;
+            case 1:
+                Menu menu = new Menu(game);
+                game.setScreen(menu);
+                break;
+            default:
+                break;
+        }
 
+    }
+
+    protected boolean restartGame = false;
     public void updatePaused(){
         menuBatch.setProjectionMatrix(menuOverlay.stage.getCamera().combined);
         menuOverlay.stage.draw();
@@ -239,7 +307,8 @@ public class GameScreen implements Screen{
                 break;
             case 1:/**start again*/
                 handleMenuOverlay();
-                restartGame();
+                /**restartGame();*/
+                restartGame = true;
                 break;
             case 2:/**level select*/
                 handleMenuOverlay();
@@ -262,38 +331,51 @@ public class GameScreen implements Screen{
         menuPressed = false;
     }
 
-    public void restartGame(){
-        GameScreen restart;
-        switch(game.levelSel){
-            case 0:
-                restart = new LevelOne(game);
+
+    public void updateGameOver(float dt){
+        hud.update(0, box, player); /** delta time set to 0 for hud counters to not count */
+
+        batch.setProjectionMatrix(camera.combined);
+        batch.begin();
+        crashVisual.update(dt, batch, box);
+        batch.end();
+
+        menuBatch.setProjectionMatrix(crashOverlay.stage.getCamera().combined);
+        crashOverlay.stage.draw();
+
+
+        switch(menuOverlay.menuOption){
+            case 1:/**start again*/
+                handleMenuOverlay();
+                /**restartGame();*/
+                restartGame = true;
                 break;
-            case 1:
-                restart = new LevelTwo(game);
+            case 2:/**level select*/
+                handleMenuOverlay();
+                LevelSelect levelSelect = new LevelSelect(game);
+                game.setScreen(levelSelect);
                 break;
             default:
-                restart = new LevelOne(game);
                 break;
         }
-        game.setScreen(restart);
-    }
-
-    public void updateGameOver(){
+        menuOverlay.menuOption = -1;
 
     }
 
 
-    /** Camera follows player and doesn't leave map */
+    /** Camera follows player and doesn't leave map
+     * box.getPosition().y is sometimes +10 to set the sprite lower on the screen instead of
+     * in the middle of the viewport y-axis */
     public boolean moveCameraWithSprite(){
         /** ROOF */
-        if(box.getPosition().y >= container.getRoofDimensions().y - camera.viewportHeight/2){
+        if(box.getPosition().y + SPRITE_POSITION_MIDDLE_OFFSET >= container.getRoofDimensions().y - camera.viewportHeight/2){
             camera.position.y = container.getRoofDimensions().y - camera.viewportHeight/2;
             return true;
         }
 
         /** NORMAL */
-        if(box.getPosition().y > camera.viewportHeight/2) {
-            camera.position.y = box.getPosition().y;
+        if(box.getPosition().y + SPRITE_POSITION_MIDDLE_OFFSET > camera.viewportHeight/2) {
+            camera.position.y = box.getPosition().y + SPRITE_POSITION_MIDDLE_OFFSET;
             return true;
         }
 
@@ -332,24 +414,9 @@ public class GameScreen implements Screen{
     public void dispose() {
         world.dispose();
         debugRenderer.dispose();
+        /**powerUpOverlay.disposalService();*/
 
     }
 
-
-
-
-    public void endLife(){
-        float delay = 3;
-        spriteMovement.crashed();
-        Gdx.input.setInputProcessor(null);
-        Timer.schedule(new Timer.Task() {
-            @Override
-            public void run() {
-                game.setScreen(crashScreen);
-                hide();
-            }
-        }, delay, 0, 1);
-
-    }
 
 }
